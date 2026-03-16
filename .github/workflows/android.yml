@@ -1,0 +1,38 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(date -u +'%Y%m%d')" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Cache Buildozer
+        uses: actions/cache@v4
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-${{ steps.get-date.outputs.date }}
+
+      - name: Build with Buildozer
+        uses: ArtemSerebrennkov/buildozer-action@v1
+        with:
+          buildozer_version: master
+          command: buildozer android release
+          repository_read_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiquqi-release-apk
+          path: bin/*.apk
